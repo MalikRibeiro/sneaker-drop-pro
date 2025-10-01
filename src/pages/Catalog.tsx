@@ -7,15 +7,16 @@ import { Slider } from "@/components/ui/slider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { useProducts } from "@/hooks/useProducts";
 
 const Catalog = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 1500]);
+  const { data: products = [], isLoading } = useProducts();
 
-  const categories = ["Basketball", "Running", "Casual", "Streetwear"];
-  const brands = ["Jordan", "Premium", "Classic", "Sport"];
-  const sizes = [38, 39, 40, 41, 42, 43, 44];
+  const categories = ["Basketball", "Running", "Casual", "Streetwear", "Lifestyle", "Skatewear"];
+  const brands = [...new Set(products.map(p => p.brand))];
+  const sizes = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -108,11 +109,19 @@ const Catalog = () => {
               </div>
 
               {/* Products */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {products.map(product => (
-                  <ProductCard key={product.id} {...product} />
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {[...Array(9)].map((_, i) => (
+                    <div key={i} className="h-96 bg-secondary animate-pulse rounded-lg" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {products.map(product => (
+                    <ProductCard key={product.id} {...product} />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

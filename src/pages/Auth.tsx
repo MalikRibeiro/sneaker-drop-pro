@@ -1,42 +1,57 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Auth = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, loading, signUp, signIn } = useAuth();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/");
+    }
+  }, [user, loading, navigate]);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Login realizado!",
-        description: "Bem-vindo de volta.",
-      });
-    }, 1000);
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    await signIn(email, password);
+    setIsSubmitting(false);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Conta criada!",
-        description: "Sua conta foi criada com sucesso.",
-      });
-    }, 1000);
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const fullName = formData.get("name") as string;
+
+    await signUp(email, password, fullName);
+    setIsSubmitting(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -60,14 +75,14 @@ const Auth = () => {
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" required />
+                    <Input id="email" name="email" type="email" placeholder="seu@email.com" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha</Label>
-                    <Input id="password" type="password" required />
+                    <Input id="password" name="password" type="password" required />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Entrando..." : "Entrar"}
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Entrando..." : "Entrar"}
                   </Button>
                   <div className="text-center text-sm">
                     <a href="#" className="text-primary hover:underline">
@@ -81,22 +96,18 @@ const Auth = () => {
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" type="text" placeholder="Seu nome" required />
+                    <Input id="name" name="name" type="text" placeholder="Seu nome" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email-register">Email</Label>
-                    <Input id="email-register" type="email" placeholder="seu@email.com" required />
+                    <Input id="email-register" name="email" type="email" placeholder="seu@email.com" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-register">Senha</Label>
-                    <Input id="password-register" type="password" required />
+                    <Input id="password-register" name="password" type="password" required />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password-confirm">Confirmar Senha</Label>
-                    <Input id="password-confirm" type="password" required />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Criando conta..." : "Criar Conta"}
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Criando conta..." : "Criar Conta"}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
                     Ao criar uma conta, você concorda com nossos{" "}

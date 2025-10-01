@@ -1,32 +1,26 @@
-import { Link } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Product } from "@/hooks/useProducts";
+import { Link } from "react-router-dom";
 
-interface ProductCardProps {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  isNew?: boolean;
-  category: string;
+interface ProductCardProps extends Omit<Product, 'description' | 'images' | 'stock'> {
 }
 
-const ProductCard = ({ id, name, price, originalPrice, image, isNew, category }: ProductCardProps) => {
-  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+const ProductCard = ({ id, name, price, original_price, image_url, is_new, category }: ProductCardProps) => {
+  const discount = original_price ? Math.round(((original_price - price) / original_price) * 100) : 0;
 
   return (
     <Card className="group overflow-hidden bg-card hover:shadow-[var(--shadow-card)] transition-all duration-300">
       <Link to={`/product/${id}`}>
         <div className="relative aspect-square overflow-hidden bg-secondary">
           <img
-            src={image}
+            src={image_url}
             alt={name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          {isNew && (
+          {is_new && (
             <Badge variant="new" className="absolute top-3 left-3">
               Lançamento
             </Badge>
@@ -61,15 +55,17 @@ const ProductCard = ({ id, name, price, originalPrice, image, isNew, category }:
             <p className="text-lg font-bold">
               R$ {price.toFixed(2).replace('.', ',')}
             </p>
-            {originalPrice && (
+            {original_price && (
               <p className="text-sm text-muted-foreground line-through">
-                R$ {originalPrice.toFixed(2).replace('.', ',')}
+                R$ {original_price.toFixed(2).replace('.', ',')}
               </p>
             )}
           </div>
-          <Button size="icon" variant="default" className="hover-scale">
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
+          <Link to={`/product/${id}`}>
+            <Button size="icon" variant="default" className="hover-scale">
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </div>
     </Card>

@@ -6,15 +6,29 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import { getProductById, getRelatedProducts } from "@/lib/products";
-import { useToast } from "@/hooks/use-toast";
+import { useProduct, useProducts } from "@/hooks/useProducts";
+import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const { toast } = useToast();
-  const product = getProductById(Number(id));
+  const { user } = useAuth();
+  const { addToCart } = useCart(user?.id);
+  const { data: product, isLoading } = useProduct(id!);
+  const { data: allProducts = [] } = useProducts();
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando produto...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -29,22 +43,21 @@ const ProductDetail = () => {
     );
   }
 
-  const relatedProducts = getRelatedProducts(product.id, product.category);
+  const relatedProducts = allProducts
+    .filter(p => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
-      toast({
-        title: "Selecione um tamanho",
-        description: "Por favor, escolha o tamanho desejado antes de adicionar ao carrinho.",
-        variant: "destructive",
-      });
+    if (!user) {
+      window.location.href = "/auth";
       return;
     }
 
-    toast({
-      title: "Adicionado ao carrinho!",
-      description: `${product.name} - Tamanho ${selectedSize}`,
-    });
+    if (!selectedSize) {
+      return;
+    }
+
+    addToCart.mutate({ productId: product.id, size: selectedSize });
   };
 
   return (
@@ -68,13 +81,13 @@ const ProductDetail = () => {
             <div className="space-y-4">
               <div className="aspect-square rounded-lg overflow-hidden bg-secondary">
                 <img
-                  src={product.images[selectedImage]}
+                  src={product.images[selectedImage] || product.image_url}
                   alt={product.name}
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
-                {product.images.map((image, index) => (
+                {(product.images.length > 0 ? product.images : [product.image_url, product.image_url, product.image_url]).map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -93,7 +106,7 @@ const ProductDetail = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="secondary">{product.brand}</Badge>
-                  {product.isNew && <Badge variant="new">Lançamento</Badge>}
+                  {product.is_new && <Badge variant="new">Lançamento</Badge>}
                 </div>
                 <h1 className="text-4xl font-bold mb-2">{product.name}</h1>
                 <p className="text-sm text-muted-foreground uppercase tracking-wide">
@@ -105,13 +118,13 @@ const ProductDetail = () => {
                 <p className="text-3xl font-bold">
                   R$ {product.price.toFixed(2).replace('.', ',')}
                 </p>
-                {product.originalPrice && (
+                {product.original_price && (
                   <>
                     <p className="text-xl text-muted-foreground line-through">
-                      R$ {product.originalPrice.toFixed(2).replace('.', ',')}
+                      R$ {product.original_price.toFixed(2).replace('.', ',')}
                     </p>
                     <Badge variant="default">
-                      -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                      -{Math.round(((product.original_price - product.price) / product.original_price) * 100)}%
                     </Badge>
                   </>
                 )}
@@ -134,9 +147,14 @@ const ProductDetail = () => {
               </div>
 
               <div className="space-y-3">
-                <Button size="lg" className="w-full" onClick={handleAddToCart}>
+                <Button 
+                  size="lg" 
+                  className="w-full" 
+                  onClick={handleAddToCart}
+                  disabled={!selectedSize || addToCart.isPending}
+                >
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  Adicionar ao Carrinho
+                  {!selectedSize ? "Selecione um tamanho" : addToCart.isPending ? "Adicionando..." : "Adicionar ao Carrinho"}
                 </Button>
                 <Button size="lg" variant="outline" className="w-full">
                   <Heart className="mr-2 h-5 w-5" />

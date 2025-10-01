@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { useProducts } from "@/hooks/useProducts";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 const Index = () => {
-  const newProducts = products.filter(p => p.isNew);
-  const saleProducts = products.filter(p => p.originalPrice);
+  const { data: products = [], isLoading } = useProducts();
+  
+  const newProducts = products.filter(p => p.is_new).slice(0, 4);
+  const saleProducts = products.filter(p => p.original_price).slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -102,11 +104,19 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {newProducts.map(product => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-96 bg-secondary animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {newProducts.map(product => (
+                  <ProductCard key={product.id} {...product} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
