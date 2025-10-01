@@ -155,7 +155,50 @@ const Cart = () => {
                     <span>R$ {finalTotal.toFixed(2).replace('.', ',')}</span>
                   </div>
 
-                  <Button size="lg" className="w-full">
+                  <Button 
+                    size="lg" 
+                    className="w-full"
+                    onClick={async () => {
+                      const checkoutItems = cartItems.map(item => ({
+                        product: item.product_id,
+                        quantity: item.quantity,
+                        size: item.size,
+                        price: item.product.price
+                      }));
+                      
+                      try {
+                        console.log('Iniciando checkout com:', checkoutItems);
+                        const response = await fetch('http://localhost:3000/api/payments/checkout', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            items: checkoutItems,
+                            user: user?.id
+                          }),
+                        });
+
+                        if (!response.ok) {
+                          const errorData = await response.text();
+                          throw new Error(`Erro do servidor: ${errorData}`);
+                        }
+
+                        const data = await response.json();
+                        console.log('Resposta do checkout:', data);
+                        
+                        if (data.clientSecret) {
+                          window.location.href = `/checkout?payment_intent=${data.clientSecret}&order_id=${data.orderId}`;
+                        } else {
+                          throw new Error('Resposta inválida do servidor');
+                        }
+                      } catch (error) {
+                        console.error('Erro ao fazer checkout:', error);
+                        alert('Erro ao iniciar o checkout: ' + error.message);
+                      }
+                    }}
+                  >
                     Finalizar Compra
                   </Button>
 

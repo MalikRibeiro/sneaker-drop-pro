@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import productRoutes from './routes/productRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
@@ -30,18 +31,22 @@ app.use(helmet({
 }));
 
 // Configuração do CORS
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(cors());
+
+// Adicionar headers para evitar problemas de CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rotas da API
 app.use('/api/products', productRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Rota de teste/saúde
 app.get('/health', (req, res) => {
